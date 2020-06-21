@@ -110,10 +110,10 @@ fn supported_langs_enum(
                 None
             }
 
-            pub fn compile(&self, infile: &PathBuf, outfile: &PathBuf) {
+            pub fn compile(&self, infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String>{
                 (match self {
                     #( Self::#variants => #compile_funcs ),*
-                })(infile, outfile);
+                })(infile, outfile)
             }
         }
     }).into()

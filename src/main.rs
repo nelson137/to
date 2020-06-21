@@ -2,6 +2,7 @@ mod compilers;
 mod to;
 
 use std::path::PathBuf;
+use std::process::exit;
 use structopt::StructOpt;
 
 static COMPILE_HELP: &'static str =
@@ -45,7 +46,12 @@ struct Cli {
     infile: PathBuf,
 
     #[structopt(last=true, help=ARGS_HELP)]
-    executable_args: Vec<String>,
+    exe_args: Vec<String>,
+}
+
+fn die(msg: String) -> ! {
+    eprintln!("to: {}", msg);
+    exit(1);
 }
 
 fn build_outfile_name(infile: &PathBuf) -> PathBuf {
@@ -63,10 +69,12 @@ fn main() {
 
     let lang = match to::Lang::determine(&args.infile) {
         Some(l) => l,
-        None => panic!(
-            "Language of infile not recognized: {}",
-            args.infile.display())
+        None => die(format!(
+                    "Language of infile not recognized: {}",
+                    args.infile.display()))
     };
+
+    let mut generated_files: Vec<PathBuf> = Vec::new();
 
     let outfile = match args.outfile {
         Some(path) => path,
@@ -79,12 +87,15 @@ fn main() {
     };
 
     if args.compile {
-        lang.compile(&args.infile, &outfile);
+        match lang.compile(&args.infile, &outfile) {
+            Ok(gfs) => gfs.into_iter().for_each(|f| generated_files.push(f)),
+            Err(msg) => die(msg)
+        }
     }
 
     if args.execute {
         print!("{}", outfile_abs.display());
-        for arg in &args.executable_args {
+        for arg in &args.exe_args {
             print!(" {}", arg);
         }
         print!("\n");
