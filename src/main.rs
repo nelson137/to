@@ -1,6 +1,7 @@
 mod compilers;
 mod to;
 
+use std::fs::remove_file;
 use std::path::PathBuf;
 use std::process::{Command, exit};
 use structopt::StructOpt;
@@ -108,7 +109,19 @@ fn main() {
     }
 
     if args.remove {
-        println!("rm {}", outfile_abs.display());
+        for gf in generated_files {
+            if gf.exists() {
+                if remove_file(&gf).is_err() {
+                    die(format!(
+                        "Failed to remove file: {}",
+                        gf.display()))
+                }
+            } else {
+                die(format!(
+                    "Cannot remove file that does not exist: {}",
+                    gf.display()));
+            }
+        }
     }
 
     exit(status);
