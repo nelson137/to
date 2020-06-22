@@ -1,10 +1,13 @@
 mod compilers;
 mod to;
+mod util;
 
 use std::fs::remove_file;
 use std::path::PathBuf;
 use std::process::{exit, Command};
 use structopt::StructOpt;
+
+use util::PathBufAddExtension;
 
 const COMPILE_HELP: &'static str = "Compile <infile> and generate an executable";
 const EXECUTE_HELP: &'static str = "Execute the generated executable (requires c)";
@@ -47,17 +50,6 @@ fn die(msg: String) -> ! {
     exit(1);
 }
 
-fn build_outfile_name(infile: &PathBuf) -> PathBuf {
-    let ext = "exe";
-    infile.with_extension(match infile.extension() {
-        None => String::from(ext),
-        Some(e) => match e.to_str() {
-            None => String::from(ext),
-            Some(e) => String::from(format!("{}.{}", e, ext)),
-        },
-    })
-}
-
 fn main() {
     let mut status = 0;
     let args = Cli::from_args();
@@ -74,7 +66,7 @@ fn main() {
 
     let outfile = match args.outfile {
         Some(path) => path,
-        None => build_outfile_name(&args.infile),
+        None => args.infile.clone().add_extension("exe"),
     };
     let outfile_abs = if outfile.is_relative() {
         PathBuf::from(format!("./{}", outfile.to_str().unwrap()))

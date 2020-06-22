@@ -3,6 +3,8 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::util::PathBufAddExtension;
+
 struct CompileStep {
     bin: String,
     outfile: PathBuf,
@@ -54,8 +56,7 @@ impl CompileStep {
 pub fn asm(infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> {
     let mut gen_files: Vec<PathBuf> = Vec::new();
 
-    let mut obj_file = infile.clone();
-    obj_file.set_extension("o");
+    let obj_file = infile.clone().add_extension("o");
 
     CompileStep::new("nasm")
         .arg("-f")
