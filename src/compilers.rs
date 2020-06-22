@@ -100,3 +100,12 @@ pub fn cpp(infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> 
         .err_msg(format!("Failed to compile infile: {}", infile.display()))
         .execute()
 }
+
+pub fn rust(infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> {
+    CompileStep::new("rustc")
+        .arg(infile.as_os_str())
+        .arg("-o")
+        .arg_outfile(outfile)
+        .err_msg(format!("Failed to compile infile: {}", infile.display()))
+        .execute()
+}

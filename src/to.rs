@@ -18,4 +18,8 @@ pub enum Lang {
     #[compile_func(compilers::cpp)]
     #[extensions("cpp", "cxx", "CXX")]
     Cpp,
+
+    #[compile_func(compilers::rust)]
+    #[extensions("rs")]
+    Rust,
 }
