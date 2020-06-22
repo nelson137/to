@@ -3,25 +3,17 @@ mod to;
 
 use std::fs::remove_file;
 use std::path::PathBuf;
-use std::process::{Command, exit};
+use std::process::{exit, Command};
 use structopt::StructOpt;
 
-static COMPILE_HELP: &'static str =
-"Compile <infile> and generate an executable";
-static EXECUTE_HELP: &'static str =
-"Execute the generated executable (requires c)";
-static REMOVE_HELP: &'static str =
-"Remove generated files";
-static FORCE_HELP: &'static str =
-"Force overwrite files if they already exist";
-static DRYRUN_HELP: &'static str =
-"Print the commands that would be executed then exit";
-static OUTFILE_HELP: &'static str =
-"The name for the generated executable";
-static INFILE_HELP: &'static str =
-"The path to the source file";
-static ARGS_HELP: &'static str =
-"The arguments to pass to the execuable";
+static COMPILE_HELP: &'static str = "Compile <infile> and generate an executable";
+static EXECUTE_HELP: &'static str = "Execute the generated executable (requires c)";
+static REMOVE_HELP: &'static str = "Remove generated files";
+static FORCE_HELP: &'static str = "Force overwrite files if they already exist";
+static DRYRUN_HELP: &'static str = "Print the commands that would be executed then exit";
+static OUTFILE_HELP: &'static str = "The name for the generated executable";
+static INFILE_HELP: &'static str = "The path to the source file";
+static ARGS_HELP: &'static str = "The arguments to pass to the execuable";
 
 #[derive(Debug, StructOpt)]
 struct Cli {
@@ -61,8 +53,8 @@ fn build_outfile_name(infile: &PathBuf) -> PathBuf {
         None => String::from(ext),
         Some(e) => match e.to_str() {
             None => String::from(ext),
-            Some(e) => String::from(format!("{}.{}", e, ext))
-        }
+            Some(e) => String::from(format!("{}.{}", e, ext)),
+        },
     })
 }
 
@@ -74,14 +66,15 @@ fn main() {
         Some(l) => l,
         None => die(format!(
             "Language of infile not recognized: {}",
-            args.infile.display()))
+            args.infile.display()
+        )),
     };
 
     let mut generated_files: Vec<PathBuf> = Vec::new();
 
     let outfile = match args.outfile {
         Some(path) => path,
-        None => build_outfile_name(&args.infile)
+        None => build_outfile_name(&args.infile),
     };
     let outfile_abs = if outfile.is_relative() {
         PathBuf::from(format!("./{}", outfile.to_str().unwrap()))
@@ -92,7 +85,7 @@ fn main() {
     if args.compile {
         match lang.compile(&args.infile, &outfile) {
             Ok(gfs) => gfs.into_iter().for_each(|f| generated_files.push(f)),
-            Err(msg) => die(msg)
+            Err(msg) => die(msg),
         }
     }
 
@@ -101,11 +94,14 @@ fn main() {
             .args(args.exe_args)
             .status();
         if exe_res.is_err() {
-            die(format!("Failed to run executable: {}", outfile_abs.display()))
+            die(format!(
+                "Failed to run executable: {}",
+                outfile_abs.display()
+            ))
         }
         match exe_res.unwrap().code() {
             Some(code) => status = code,
-            None => die(format!("Executable was terminated by signal"))
+            None => die(format!("Executable was terminated by signal")),
         }
     }
 
@@ -113,14 +109,13 @@ fn main() {
         for gf in generated_files {
             if gf.exists() {
                 if remove_file(&gf).is_err() {
-                    die(format!(
-                        "Failed to remove file: {}",
-                        gf.display()))
+                    die(format!("Failed to remove file: {}", gf.display()))
                 }
             } else {
                 die(format!(
                     "Cannot remove file that does not exist: {}",
-                    gf.display()));
+                    gf.display()
+                ));
             }
         }
     }

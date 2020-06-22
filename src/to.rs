@@ -17,5 +17,5 @@ pub enum Lang {
 
     #[compile_func(compilers::cpp)]
     #[extensions("cpp")]
-    Cpp
+    Cpp,
 }
