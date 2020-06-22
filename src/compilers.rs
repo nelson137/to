@@ -1,83 +1,102 @@
+use std::ffi::OsStr;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::Command;
 
+struct CompileStep {
+    bin: String,
+    outfile: PathBuf,
+    command: Command,
+    error_message: String,
+}
+
+impl CompileStep {
+    fn new(bin: &str) -> Self {
+        Self {
+            bin: String::from(bin),
+            outfile: PathBuf::new(),
+            command: Command::new(bin),
+            error_message: String::from(""),
+        }
+    }
+
+    fn arg<S: AsRef<OsStr>>(&mut self, a: S) -> &mut Self {
+        self.command.arg(a);
+        self
+    }
+
+    fn arg_outfile(&mut self, o: &PathBuf) -> &mut Self {
+        self.outfile = o.clone();
+        self.command.arg(o.as_os_str());
+        self
+    }
+
+    fn err_msg(&mut self, msg: String) -> &mut Self {
+        self.error_message = msg;
+        self
+    }
+
+    fn execute(&mut self) -> Result<Vec<PathBuf>, String> {
+        let output = match self.command.output() {
+            Ok(o) => o,
+            Err(_) => return Err(format!("Failed to execute {}", self.bin)),
+        };
+
+        if output.status.success() {
+            Ok(vec![self.outfile.clone()])
+        } else {
+            io::stderr().write_all(&output.stderr).unwrap();
+            Err(self.error_message.clone())
+        }
+    }
+}
+
 pub fn asm(infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> {
+    let mut gen_files: Vec<PathBuf> = Vec::new();
+
     let mut obj_file = infile.clone();
     obj_file.set_extension("o");
 
-    let output = Command::new("nasm")
+    CompileStep::new("nasm")
         .arg("-f")
         .arg("elf64")
-        .arg(infile.clone().into_os_string())
+        .arg(infile.as_os_str())
         .arg("-o")
-        .arg(obj_file.clone().into_os_string())
-        .output();
-    let output = match output {
-        Ok(o) => o,
-        Err(_) => return Err("Failed to execute nasm".to_string()),
-    };
+        .arg_outfile(&obj_file)
+        .err_msg(format!("Failed to assemble infile: {}", infile.display()))
+        .execute()?
+        .into_iter()
+        .for_each(|gf| gen_files.push(gf));
 
-    if output.status.success() == false {
-        io::stderr().write_all(&output.stderr).unwrap();
-        return Err(format!("Failed to assemble infile: {}", infile.display()));
-    }
-
-    let output = Command::new("ld")
-        .arg(obj_file.clone().into_os_string())
+    CompileStep::new("ld")
+        .arg(obj_file.as_os_str())
         .arg("-o")
-        .arg(outfile.clone().into_os_string())
-        .output();
-    let output = match output {
-        Ok(o) => o,
-        Err(_) => return Err("Failed to execute ld".to_string()),
-    };
-
-    if output.status.success() {
-        Ok(vec![obj_file.clone(), outfile.clone()])
-    } else {
-        io::stderr().write_all(&output.stderr).unwrap();
-        Err(format!(
+        .arg_outfile(outfile)
+        .err_msg(format!(
             "Failed to link object file: {}",
             obj_file.display()
         ))
-    }
+        .execute()?
+        .into_iter()
+        .for_each(|gf| gen_files.push(gf));
+
+    Ok(gen_files)
 }
 
 pub fn c(infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> {
-    let output = Command::new("gcc")
-        .arg(infile.clone().into_os_string())
+    CompileStep::new("gcc")
+        .arg(infile.as_os_str())
         .arg("-o")
-        .arg(outfile.clone().into_os_string())
-        .output();
-    let output = match output {
-        Ok(o) => o,
-        Err(_) => return Err("Failed to execute gcc".to_string()),
-    };
-
-    if output.status.success() {
-        Ok(vec![outfile.clone()])
-    } else {
-        io::stderr().write_all(&output.stderr).unwrap();
-        Err(format!("Failed to compile infile: {}", infile.display()))
-    }
+        .arg_outfile(outfile)
+        .err_msg(format!("Failed to compile infile: {}", infile.display()))
+        .execute()
 }
 
 pub fn cpp(infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> {
-    let output = Command::new("g++")
-        .arg(infile.clone().into_os_string())
+    CompileStep::new("g++")
+        .arg(infile.as_os_str())
         .arg("-o")
-        .arg(outfile.clone().into_os_string())
-        .output();
-    let output = match output {
-        Ok(o) => o,
-        Err(_) => return Err("Failed to execute g++".to_string()),
-    };
-
-    if output.status.success() {
-        Ok(vec![outfile.clone()])
-    } else {
-        io::stderr().write_all(&output.stderr).unwrap();
-        Err(format!("Failed to compile infile: {}", infile.display()))
-    }
+        .arg_outfile(outfile)
+        .err_msg(format!("Failed to compile infile: {}", infile.display()))
+        .execute()
 }
