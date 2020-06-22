@@ -62,7 +62,10 @@ fn main() {
 
     let outfile = match args.outfile {
         Some(path) => path,
-        None => args.infile.clone().add_extension("to.exe"),
+        None => match args.infile.file_name() {
+            Some(n) => PathBuf::from(n).add_extension("to.exe"),
+            None => die(format!("Infile name is invalid: {}", args.infile.display())),
+        },
     };
     let outfile_abs = if outfile.is_relative() {
         PathBuf::from(format!("./{}", outfile.to_str().unwrap()))
