@@ -6,14 +6,14 @@ use std::path::PathBuf;
 use std::process::{exit, Command};
 use structopt::StructOpt;
 
-static COMPILE_HELP: &'static str = "Compile <infile> and generate an executable";
-static EXECUTE_HELP: &'static str = "Execute the generated executable (requires c)";
-static REMOVE_HELP: &'static str = "Remove generated files";
-static FORCE_HELP: &'static str = "Force overwrite files if they already exist";
-static DRYRUN_HELP: &'static str = "Print the commands that would be executed then exit";
-static OUTFILE_HELP: &'static str = "The name for the generated executable";
-static INFILE_HELP: &'static str = "The path to the source file";
-static ARGS_HELP: &'static str = "The arguments to pass to the execuable";
+const COMPILE_HELP: &'static str = "Compile <infile> and generate an executable";
+const EXECUTE_HELP: &'static str = "Execute the generated executable (requires c)";
+const REMOVE_HELP: &'static str = "Remove generated files";
+const FORCE_HELP: &'static str = "Force overwrite files if they already exist";
+const DRYRUN_HELP: &'static str = "Print the commands that would be executed then exit";
+const OUTFILE_HELP: &'static str = "The name for the generated executable";
+const INFILE_HELP: &'static str = "The path to the source file";
+const ARGS_HELP: &'static str = "The arguments to pass to the execuable";
 
 #[derive(Debug, StructOpt)]
 struct Cli {
