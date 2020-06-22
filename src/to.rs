@@ -8,14 +8,14 @@ use to::SupportedLangs;
 #[derive(Debug, Clone, Copy, SupportedLangs)]
 pub enum Lang {
     #[compile_func(compilers::asm)]
-    #[extensions("s", "asm")]
+    #[extensions("s", "S", "asm")]
     Asm,
 
     #[compile_func(compilers::c)]
-    #[extensions("c", "cc")]
+    #[extensions("c")]
     C,
 
     #[compile_func(compilers::cpp)]
-    #[extensions("cpp")]
+    #[extensions("cpp", "cxx", "CXX")]
     Cpp,
 }
