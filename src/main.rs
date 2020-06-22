@@ -56,11 +56,12 @@ fn die(msg: String) -> ! {
 }
 
 fn build_outfile_name(infile: &PathBuf) -> PathBuf {
+    let ext = "exe";
     infile.with_extension(match infile.extension() {
-        None => String::from("o"),
+        None => String::from(ext),
         Some(e) => match e.to_str() {
-            None => String::from("o"),
-            Some(e) => String::from(format!("{}.o", e))
+            None => String::from(ext),
+            Some(e) => String::from(format!("{}.{}", e, ext))
         }
     })
 }
