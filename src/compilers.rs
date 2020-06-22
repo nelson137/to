@@ -39,7 +39,7 @@ impl CompileStep {
     fn execute(&mut self) -> Result<Vec<PathBuf>, String> {
         let output = match self.command.output() {
             Ok(o) => o,
-            Err(_) => return Err(format!("Failed to execute {}", self.bin)),
+            Err(e) => return Err(format!("Failed to execute {}: {}", self.bin, e)),
         };
 
         if output.status.success() {
