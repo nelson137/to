@@ -27,7 +27,19 @@ pub fn c(infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> {
 }
 
 pub fn cpp(infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> {
-    println!("g++ {} -o {}", infile.display(), outfile.display());
+    let output = Command::new("g++")
+        .arg(infile.clone().into_os_string())
+        .arg("-o").arg(outfile.clone().into_os_string())
+        .output();
+    let output = match output {
+        Ok(o) => o,
+        Err(_) => return Err("Failed to execute g++".to_string())
+    };
 
-    Ok(vec![outfile.clone()])
+    if output.status.success() {
+        Ok(vec![outfile.clone()])
+    } else {
+        io::stderr().write_all(&output.stderr).unwrap();
+        Err(format!("Failed to compile infile: {}", infile.display()))
+    }
 }

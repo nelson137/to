@@ -15,5 +15,6 @@ pub enum Lang {
     C,
 
     #[compile_func(compilers::cpp)]
+    #[extensions("cpp")]
     Cpp
 }
