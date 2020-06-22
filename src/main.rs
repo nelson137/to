@@ -2,7 +2,7 @@ mod compilers;
 mod to;
 
 use std::path::PathBuf;
-use std::process::exit;
+use std::process::{Command, exit};
 use structopt::StructOpt;
 
 static COMPILE_HELP: &'static str =
@@ -65,13 +65,14 @@ fn build_outfile_name(infile: &PathBuf) -> PathBuf {
 }
 
 fn main() {
+    let mut status = 0;
     let args = Cli::from_args();
 
     let lang = match to::Lang::determine(&args.infile) {
         Some(l) => l,
         None => die(format!(
-                    "Language of infile not recognized: {}",
-                    args.infile.display()))
+            "Language of infile not recognized: {}",
+            args.infile.display()))
     };
 
     let mut generated_files: Vec<PathBuf> = Vec::new();
@@ -94,14 +95,21 @@ fn main() {
     }
 
     if args.execute {
-        print!("{}", outfile_abs.display());
-        for arg in &args.exe_args {
-            print!(" {}", arg);
+        let exe_res = Command::new(outfile_abs.as_os_str())
+            .args(args.exe_args)
+            .status();
+        if exe_res.is_err() {
+            die(format!("Failed to run executable: {}", outfile_abs.display()))
         }
-        print!("\n");
+        match exe_res.unwrap().code() {
+            Some(code) => status = code,
+            None => die(format!("Executable was terminated by signal"))
+        }
     }
 
     if args.remove {
         println!("rm {}", outfile_abs.display());
     }
+
+    exit(status);
 }
