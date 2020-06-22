@@ -66,7 +66,7 @@ fn main() {
 
     let outfile = match args.outfile {
         Some(path) => path,
-        None => args.infile.clone().add_extension("exe"),
+        None => args.infile.clone().add_extension("to.exe"),
     };
     let outfile_abs = if outfile.is_relative() {
         PathBuf::from(format!("./{}", outfile.to_str().unwrap()))
