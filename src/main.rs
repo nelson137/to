@@ -84,15 +84,16 @@ fn main() {
         let exe_res = Command::new(outfile_abs.as_os_str())
             .args(args.exe_args)
             .status();
-        if exe_res.is_err() {
-            die(format!(
-                "Failed to run executable: {}",
-                outfile_abs.display()
-            ))
-        }
-        match exe_res.unwrap().code() {
-            Some(code) => status = code,
-            None => die(format!("Executable was terminated by signal")),
+        match exe_res {
+            Ok(s) => match s.code() {
+                Some(code) => status = code,
+                None => die(format!("Executable was terminated by signal")),
+            },
+            Err(reason) => die(format!(
+                "Failed to run executable: {}: {}",
+                outfile_abs.display(),
+                reason
+            )),
         }
     }
 
