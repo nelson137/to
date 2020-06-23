@@ -1,5 +1,4 @@
 use std::ffi::OsStr;
-use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -30,16 +29,15 @@ impl CompileStep {
     }
 
     fn execute_with_err(&mut self, err_msg: String) -> Result<Vec<PathBuf>, String> {
-        let output = match self.command.output() {
-            Ok(o) => o,
-            Err(e) => return Err(format!("Failed to execute {}: {}", self.bin, e)),
-        };
-
-        if output.status.success() {
-            Ok(vec![self.outfile.clone()])
-        } else {
-            io::stderr().write_all(&output.stderr).unwrap();
-            Err(err_msg)
+        match self.command.status() {
+            Ok(status) => {
+                if status.success() {
+                    Ok(vec![self.outfile.clone()])
+                } else {
+                    Err(err_msg)
+                }
+            }
+            Err(e) => Err(format!("Failed to execute {}: {}", self.bin, e)),
         }
     }
 }
