@@ -1,11 +1,11 @@
-mod compilers;
-mod to;
-mod util;
-
 use std::fs::remove_file;
 use std::path::PathBuf;
 use std::process::{exit, Command};
 use structopt::StructOpt;
+
+mod compilers;
+mod to;
+mod util;
 
 use util::{die, PathBufAddExtension, PathIsNopathExec};
 
