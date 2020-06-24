@@ -62,8 +62,12 @@ fn main() {
             None => die(format!("Infile name is invalid: {}", args.infile.display())),
         },
     };
+
     let outfile_abs = if outfile.is_relative() {
-        PathBuf::from(format!("./{}", outfile.to_str().unwrap()))
+        let mut p = PathBuf::new();
+        p.push(".");
+        p.push(outfile);
+        p
     } else {
         outfile.clone()
     };
