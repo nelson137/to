@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use std::process::{exit, Command};
 use structopt::StructOpt;
 
-use util::{die, PathBufAddExtension};
+use util::{die, PathBufAddExtension, PathIsNopathExec};
 
 const COMPILE_HELP: &'static str = "Compile <infile> and generate an executable";
 const EXECUTE_HELP: &'static str = "Execute the generated executable (requires c)";
@@ -56,20 +56,14 @@ fn main() {
     let mut generated_files: Vec<PathBuf> = Vec::new();
 
     let outfile = match args.outfile {
-        Some(path) => path,
+        Some(path) => match path.is_nopath_exec() {
+            true => path.clone(),
+            false => build_path!(".", path),
+        },
         None => match args.infile.file_name() {
-            Some(n) => PathBuf::from(n).add_extension("to.exe"),
+            Some(path) => PathBuf::from(path).add_extension("to.exe"),
             None => die(format!("Infile name is invalid: {}", args.infile.display())),
         },
-    };
-
-    let outfile_abs = if outfile.is_relative() {
-        let mut p = PathBuf::new();
-        p.push(".");
-        p.push(outfile);
-        p
-    } else {
-        outfile.clone()
     };
 
     if args.compile {
@@ -80,7 +74,7 @@ fn main() {
     }
 
     if args.execute {
-        let exe_res = Command::new(outfile_abs.as_os_str())
+        let exe_res = Command::new(outfile.as_os_str())
             .args(args.exe_args)
             .status();
         match exe_res {
@@ -93,7 +87,7 @@ fn main() {
             },
             Err(reason) => die(format!(
                 "Failed to run executable: {}: {}",
-                outfile_abs.display(),
+                outfile.display(),
                 reason
             )),
         }
