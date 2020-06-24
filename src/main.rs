@@ -94,15 +94,8 @@ fn main() {
 
     if args.remove {
         for gf in generated_files {
-            if gf.exists() {
-                if remove_file(&gf).is_err() {
-                    die(format!("Failed to remove file: {}", gf.display()))
-                }
-            } else {
-                die(format!(
-                    "Cannot remove file that does not exist: {}",
-                    gf.display()
-                ));
+            if let Some(err) = remove_file(&gf).err() {
+                die(format!("Failed to remove file: {}: {}", gf.display(), err))
             }
         }
     }
