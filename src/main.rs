@@ -7,7 +7,7 @@ mod compilers;
 mod to;
 mod util;
 
-use util::{die, PathBufAddExtension, PathIsNopathExec};
+use util::{die, PathBufUtils};
 
 const COMPILE_HELP: &'static str = "Compile <infile> and generate an executable";
 const EXECUTE_HELP: &'static str = "Execute the generated executable (requires c)";
@@ -52,15 +52,13 @@ fn main() {
     let mut generated_files: Vec<PathBuf> = Vec::new();
 
     let outfile = match args.outfile {
-        Some(path) => match path.is_nopath_exec() {
-            true => path.clone(),
-            false => build_path!(".", path),
-        },
+        Some(path) => path,
         None => match args.infile.file_name() {
             Some(path) => PathBuf::from(path).add_extension("to.exe"),
             None => die(format!("Infile name is invalid: {}", args.infile.display())),
         },
-    };
+    }
+    .to_nopath_exec();
 
     if args.compile {
         match lang.compile(&args.infile, &outfile) {
