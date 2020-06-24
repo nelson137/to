@@ -6,81 +6,48 @@ extern crate syn;
 extern crate quote;
 
 use proc_macro::TokenStream;
+use proc_macro_error::{abort, proc_macro_error};
 use quote::quote;
 use syn::{
-    parse_macro_input, punctuated::Punctuated, Attribute, Data, DeriveInput, Ident, Lit, Meta,
-    NestedMeta, Path, Variant,
+    parse_macro_input, punctuated::Punctuated, Data, DeriveInput, Ident, Lit, Path, Variant,
 };
 
-#[proc_macro_derive(SupportedLangs, attributes(compile_func, extensions))]
-pub fn supported_langs(item: TokenStream) -> TokenStream {
+mod attrs;
+use attrs::ToLangAttr;
+
+#[proc_macro_derive(ToLangs, attributes(to_lang))]
+#[proc_macro_error]
+pub fn to_langs(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item as DeriveInput);
-    let name = &input.ident;
-
     match input.data {
-        Data::Enum(ref e) => supported_langs_enum(name, &e.variants, &input.attrs),
-        _ => panic!("SupportedLangs only supports enums"),
+        Data::Enum(ref e) => to_langs_enum(&input.ident, &e.variants),
+        _ => abort!(input.ident, "ToLangs only supports enums"),
     }
 }
 
-fn add_compile_func(entries: &mut Vec<Path>, attr: &Meta) {
-    match attr {
-        Meta::List(l) => {
-            if l.nested.len() != 1 {
-                panic!("compile_func attr can only accept one argument");
-            }
-            match &l.nested[0] {
-                NestedMeta::Meta(m) => match m {
-                    Meta::Path(p) => entries.push(p.clone()),
-                    _ => panic!("compile_func attr requires paths"),
-                },
-                _ => panic!("compile_func attr requires a function"),
-            }
-        }
-        _ => panic!("compile_func attr must be like #[compile_func(...)]"),
-    };
-}
-
-fn add_extension_entries(
-    entries_ext: &mut Vec<Lit>,
-    entries_var: &mut Vec<Ident>,
-    var: &Ident,
-    attr: &Meta,
-) {
-    match attr {
-        Meta::List(l) => {
-            for ext in &l.nested {
-                match ext {
-                    NestedMeta::Lit(l) => {
-                        entries_ext.push(l.clone());
-                        entries_var.push(var.clone());
-                    }
-                    _ => panic!("extensions attr requires string literals"),
-                }
-            }
-        }
-        _ => panic!("extensions attr must be like #[extensions(...)]"),
-    }
-}
-
-fn supported_langs_enum(
+fn to_langs_enum(
     enum_name: &Ident,
     variants_input: &Punctuated<Variant, Token![,]>,
-    _attrs: &[Attribute],
 ) -> TokenStream {
-    let mut variants: Vec<Ident> = Vec::new();
-    let mut compile_funcs: Vec<Path> = Vec::new();
+    let mut compile_funcs_vars: Vec<Ident> = Vec::new();
+    let mut compile_funcs_fns: Vec<Path> = Vec::new();
     let mut extensions_ext: Vec<Lit> = Vec::new();
     let mut extensions_var: Vec<Ident> = Vec::new();
 
     for var in variants_input.iter() {
         for attr in &var.attrs {
-            let meta = attr.parse_meta().unwrap();
-            if attr.path.is_ident("compile_func") {
-                variants.push(var.ident.clone());
-                add_compile_func(&mut compile_funcs, &meta);
-            } else if attr.path.is_ident("extensions") {
-                add_extension_entries(&mut extensions_ext, &mut extensions_var, &var.ident, &meta);
+            if attr.path.is_ident("to_lang") {
+                match attr.parse_args::<ToLangAttr>() {
+                    Ok(to_lang_attr) => {
+                        compile_funcs_vars.push(var.ident.clone());
+                        compile_funcs_fns.push(to_lang_attr.compile_func);
+                        for ext in to_lang_attr.extensions.into_iter() {
+                            extensions_var.push(var.ident.clone());
+                            extensions_ext.push(ext);
+                        }
+                    }
+                    Err(err) => abort!(attr, err),
+                }
             }
         }
     }
@@ -103,7 +70,7 @@ fn supported_langs_enum(
 
             pub fn compile(&self, infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String>{
                 (match self {
-                    #( Self::#variants => #compile_funcs ),*
+                    #( Self::#compile_funcs_vars => #compile_funcs_fns ),*
                 })(infile, outfile)
             }
         }

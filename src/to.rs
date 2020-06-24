@@ -2,24 +2,20 @@ use std::path::PathBuf;
 
 use crate::compilers;
 
-use to::SupportedLangs;
+use to::ToLangs;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy, SupportedLangs)]
+#[derive(Debug, Clone, Copy, ToLangs)]
 pub enum Lang {
-    #[compile_func(compilers::asm)]
-    #[extensions("s", "S", "asm")]
+    #[to_lang(compile_func=compilers::asm, extensions("s", "S", "asm"))]
     Asm,
 
-    #[compile_func(compilers::c)]
-    #[extensions("c")]
+    #[to_lang(compile_func=compilers::c, extensions("c"))]
     C,
 
-    #[compile_func(compilers::cpp)]
-    #[extensions("cpp", "cxx", "CXX")]
+    #[to_lang(compile_func=compilers::cpp, extensions("cpp", "cxx", "CXX"))]
     Cpp,
 
-    #[compile_func(compilers::rust)]
-    #[extensions("rs")]
+    #[to_lang(compile_func=compilers::rust, extensions("rs"))]
     Rust,
 }
