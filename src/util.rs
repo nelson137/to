@@ -1,4 +1,10 @@
 use std::path::PathBuf;
+use std::process::exit;
+
+pub fn die(msg: String) -> ! {
+    eprintln!("to: {}", msg);
+    exit(1);
+}
 
 pub trait PathBufAddExtension {
     fn add_extension(&mut self, ext: &str) -> Self;

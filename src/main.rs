@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use std::process::{exit, Command};
 use structopt::StructOpt;
 
-use util::PathBufAddExtension;
+use util::{die, PathBufAddExtension};
 
 const COMPILE_HELP: &'static str = "Compile <infile> and generate an executable";
 const EXECUTE_HELP: &'static str = "Execute the generated executable (requires c)";
@@ -39,11 +39,6 @@ struct Cli {
 
     #[structopt(last=true, help=ARGS_HELP)]
     exe_args: Vec<String>,
-}
-
-fn die(msg: String) -> ! {
-    eprintln!("to: {}", msg);
-    exit(1);
 }
 
 fn main() {
