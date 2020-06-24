@@ -86,7 +86,10 @@ fn main() {
         match exe_res {
             Ok(s) => match s.code() {
                 Some(code) => status = code,
-                None => die(format!("Executable was terminated by signal")),
+                None => die(format!(
+                    "Executable was terminated by signal: {}",
+                    outfile.display()
+                )),
             },
             Err(reason) => die(format!(
                 "Failed to run executable: {}: {}",
