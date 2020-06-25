@@ -20,7 +20,7 @@ use attrs::ToLangAttr;
 pub fn to_langs(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item as DeriveInput);
     match input.data {
-        Data::Enum(ref e) => to_langs_enum(&input.ident, &e.variants),
+        Data::Enum(e) => to_langs_enum(&input.ident, &e.variants),
         _ => abort!(input.ident, "ToLangs only supports enums"),
     }
 }
@@ -29,21 +29,21 @@ fn to_langs_enum(
     enum_name: &Ident,
     variants_input: &Punctuated<Variant, Token![,]>,
 ) -> TokenStream {
-    let mut compile_funcs_vars: Vec<Ident> = Vec::new();
-    let mut compile_funcs_fns: Vec<Path> = Vec::new();
-    let mut extensions_ext: Vec<Lit> = Vec::new();
-    let mut extensions_var: Vec<Ident> = Vec::new();
+    let mut compile_func_vars: Vec<Ident> = Vec::new();
+    let mut compile_func_fns: Vec<Path> = Vec::new();
+    let mut extensions_exts: Vec<Lit> = Vec::new();
+    let mut extensions_vars: Vec<Ident> = Vec::new();
 
     for var in variants_input.iter() {
         for attr in &var.attrs {
             if attr.path.is_ident("to_lang") {
                 match attr.parse_args::<ToLangAttr>() {
                     Ok(to_lang_attr) => {
-                        compile_funcs_vars.push(var.ident.clone());
-                        compile_funcs_fns.push(to_lang_attr.compile_func);
+                        compile_func_vars.push(var.ident.clone());
+                        compile_func_fns.push(to_lang_attr.compile_func);
                         for ext in to_lang_attr.extensions.into_iter() {
-                            extensions_var.push(var.ident.clone());
-                            extensions_ext.push(ext);
+                            extensions_vars.push(var.ident.clone());
+                            extensions_exts.push(ext);
                         }
                     }
                     Err(err) => abort!(attr, err),
@@ -55,23 +55,35 @@ fn to_langs_enum(
     (quote! {
         impl #enum_name {
             pub fn determine(file: &PathBuf) -> Option<Self> {
-                let extensions = [ #( #extensions_ext ),* ];
-                let variants = [ #( Self::#extensions_var ),* ];
+                use #enum_name::*;
 
-                let ext = file.extension()?.to_str()?;
-                for i in 0..extensions.len() {
-                    if extensions[i] == ext {
-                        return Some(variants[i]);
+                let extensions: &'static [&'static str] = &[ #( #extensions_exts ),* ];
+                let variants: &'static [&'static Self] = &[ #( &#extensions_vars ),* ];
+
+                let extension = file.extension()?.to_str()?;
+                for i in 0..variants.len() {
+                    if extensions[i] == extension {
+                        return Some(*variants[i]);
                     }
                 }
 
                 None
             }
 
-            pub fn compile(&self, infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String>{
-                (match self {
-                    #( Self::#compile_funcs_vars => #compile_funcs_fns ),*
-                })(infile, outfile)
+            pub fn compile(&self, infile: &PathBuf, outfile: &PathBuf) -> Result<Vec<PathBuf>, String> {
+                use #enum_name::*;
+                use std::mem::discriminant;
+
+                let variants: &'static [&'static Self] = &[ #( &#compile_func_vars ),* ];
+                let functions: &'static [fn(&PathBuf, &PathBuf) -> Result<Vec<PathBuf>, String>] = &[ #( #compile_func_fns ),* ];
+
+                for i in 0..variants.len() {
+                    if discriminant(variants[i]) == discriminant(self) {
+                        return functions[i](infile, outfile);
+                    }
+                }
+
+                Err(format!("No compiler implemented for language: {:?}", self))
             }
         }
     }).into()
