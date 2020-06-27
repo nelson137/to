@@ -1,0 +1,6 @@
+java support
+    compile
+        cmd: javac FILE.java
+        creates: FILE
+    run
+        cmd: java FILE
