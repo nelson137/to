@@ -30,10 +30,13 @@ impl CompileStep {
 
     fn execute_with_err(&mut self, err_msg: String) -> Result<Vec<PathBuf>, String> {
         match self.command.status() {
-            Ok(status) => match status.success() {
-                true => Ok(vec![self.outfile.clone()]),
-                false => Err(err_msg),
-            },
+            Ok(status) => {
+                if status.success() {
+                    Ok(vec![self.outfile.clone()])
+                } else {
+                    Err(err_msg)
+                }
+            }
             Err(e) => Err(format!("Failed to execute {}: {}", self.bin, e)),
         }
     }

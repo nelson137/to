@@ -9,12 +9,12 @@ mod util;
 
 use util::{die, PathBufUtils};
 
-const COMPILE_HELP: &'static str = "Compile <infile> and generate an executable";
-const EXECUTE_HELP: &'static str = "Execute the generated executable (requires c)";
-const REMOVE_HELP: &'static str = "Remove generated files";
-const OUTFILE_HELP: &'static str = "The name for the generated executable";
-const INFILE_HELP: &'static str = "The path to the source file";
-const ARGS_HELP: &'static str = "The arguments to pass to the execuable";
+const COMPILE_HELP: &str = "Compile <infile> and generate an executable";
+const EXECUTE_HELP: &str = "Execute the generated executable (requires c)";
+const REMOVE_HELP: &str = "Remove generated files";
+const OUTFILE_HELP: &str = "The name for the generated executable";
+const INFILE_HELP: &str = "The path to the source file";
+const ARGS_HELP: &str = "The arguments to pass to the execuable";
 
 #[derive(Debug, StructOpt)]
 struct Cli {

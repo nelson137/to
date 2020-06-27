@@ -20,7 +20,7 @@ impl Parse for ToLangAttr {
         let mut extensions: syn::Result<Extensions> =
             Err(input.error("missing required parameter: extensions"));
 
-        while input.is_empty() == false {
+        while !input.is_empty() {
             let name: Ident = match input.parse() {
                 Ok(i) => i,
                 Err(err) => abort!(input.span(), err),
